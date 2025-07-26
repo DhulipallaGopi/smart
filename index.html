@@ -1,513 +1,411 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Gradient Descent Gauntlet - Advanced!</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>On-Premises Smart Meeting Summary System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals -->
+    <!-- Application Structure Plan: The SPA is designed as a narrative journey through the technical proposal. It starts with a high-level 'Challenge Overview' to set the context. The core of the app is the 'System Architecture' section, featuring an interactive diagram where users can click on modules to see detailed explanations. This is more engaging than a static image. The 'Technology Deep Dive' section uses interactive charts to compare candidate models (ASR and NMT), allowing users to visually assess trade-offs in performance and resource usage. 'Optimization Strategies' are presented as clear, expandable cards. This structure was chosen to guide a non-technical or semi-technical user from the "what" and "why" (the challenge) to the "how" (the architecture and technology), making a dense technical document accessible and explorable. -->
+    <!-- Visualization & Content Choices: 1. System Architecture: Report Info -> Conceptual Diagram -> Goal: Organize/Explain -> Viz: Interactive HTML/CSS diagram -> Interaction: Click on a module to highlight it and display its description. Justification: This is far more engaging than a static image and allows users to explore the system's components at their own pace. Method: HTML/CSS with Tailwind and Vanilla JS for click events. 2. ASR/NMT Model Comparison: Report Info -> Tables 2 & 3 -> Goal: Compare -> Viz: Grouped Bar Charts (Chart.js) -> Interaction: Buttons to toggle between different metrics (e.g., RAM Usage, Processing Time). Justification: Charts provide an immediate visual comparison of quantitative data, making it easier to understand the trade-offs between models than reading a table. Method: Chart.js on a <canvas> element. 3. Core Constraints: Report Info -> Table 1 -> Goal: Inform -> Viz: Styled cards with icons. Justification: Breaks down the dense list of constraints into visually distinct, easy-to-scan items. Method: HTML/CSS with Tailwind. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
         body {
-            font-family: 'Segoe UI', sans-serif;
-            margin: 0;
-            background: linear-gradient(to right, #ece9e6, #ffffff); /* Subtle gradient background */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfcfb;
+            color: #333;
         }
-        .game-container {
+        .chart-container {
             position: relative;
             width: 100%;
-            max-width: 950px; /* Slightly wider */
-            margin: 20px auto;
-            border: 2px solid #b2dfdb; /* Softer border */
-            padding: 30px; /* More padding */
-            background: #ffffff;
-            border-radius: 15px; /* More rounded corners */
-            box-shadow: 0 10px 25px rgba(0,0,0,0.15); /* Stronger shadow */
-            overflow: hidden; /* To contain confetti */
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px;
+            max-height: 50vh;
         }
-        h1 {
-            text-align: center;
-            color: #26a69a; /* Teal color */
-            font-size: 2.5em; /* Larger title */
-            margin-bottom: 15px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
-        }
-        p {
-            text-align: center;
-            color: #555;
-            line-height: 1.6;
-        }
-        .mountain-container {
-            position: relative;
-            height: 350px; /* Taller mountain */
-            margin-top: 30px;
-            background: linear-gradient(to bottom, #e0f2f7, #bbdefb); /* Sky-like gradient */
-            border: 2px solid #81d4fa; /* Lighter blue border */
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
-        .path-point {
-            position: absolute;
-            width: 12px; /* Slightly larger points */
-            height: 12px;
-            background-color: #ffb74d; /* Orange accent */
-            border-radius: 50%;
-            z-index: 2;
-            transform: translate(-50%, -50%); /* Center the point */
-            box-shadow: 0 0 5px rgba(0,0,0,0.2);
-        }
-        .global-minimum {
-            background-color: #ef5350 !important; /* Red for the target */
-            box-shadow: 0 0 15px #ef5350, 0 0 5px rgba(0,0,0,0.3); /* Glow effect */
-            animation: pulse 1.5s infinite alternate;
-        }
-        @keyframes pulse {
-            from { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            to { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
-        }
-        #model {
-            position: absolute;
-            width: 30px; /* Larger model */
-            height: 30px;
-            background-color: #673ab7; /* Deep purple */
-            border-radius: 50%;
-            z-index: 3;
-            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Bouncier transition */
-            transform: translate(-50%, -50%); /* Center the model */
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-        .controls {
-            display: flex;
-            justify-content: center;
-            gap: 15px; /* Space between buttons */
-            margin-top: 30px;
-        }
-        button {
-            padding: 12px 25px; /* Larger buttons */
-            background: #26a69a; /* Teal */
-            color: white;
-            border: none;
-            border-radius: 8px; /* More rounded */
+        .nav-link {
+            transition: all 0.3s ease;
             cursor: pointer;
-            font-size: 1.1em;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
-        button:hover {
-            background-color: #00897b; /* Darker teal */
-            transform: translateY(-2px); /* Slight lift effect */
+        .nav-link.active {
+            color: #c084fc;
+            border-bottom-color: #c084fc;
         }
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
+        .arch-module {
+            transition: all 0.3s ease;
+            cursor: pointer;
         }
-        .info-display {
-            display: flex;
-            justify-content: space-around;
-            margin-top: 20px;
-            font-size: 1.1em;
-            color: #444;
-            background-color: #e0f7fa; /* Light blue background for info */
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #b2ebf2;
+        .arch-module.highlight {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(192, 132, 252, 0.5);
+            border-color: #c084fc;
         }
-        .info-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+        .arch-arrow {
+            position: relative;
+            width: 100%;
+            height: 2px;
+            background-color: #d1d5db;
         }
-        .info-item strong {
-            color: #00796b; /* Darker teal */
-            font-size: 1.2em;
-        }
-        #message {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 1.1em;
-            color: #d32f2f; /* Red for warnings/messages */
-            min-height: 25px; /* Prevent layout shift */
-        }
-        .overlay {
+        .arch-arrow::after {
+            content: '▶';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.85); /* Darker overlay */
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 5; /* Higher z-index */
-            border-radius: 15px; /* Match container */
-            text-align: center;
-            padding: 20px;
-            backdrop-filter: blur(5px); /* Subtle blur effect */
-        }
-        .overlay h2 {
-            font-size: 3em;
-            margin-bottom: 15px;
-            color: #80cbc4; /* Lighter teal */
-        }
-        .overlay p {
-            font-size: 1.4em;
-            margin-bottom: 30px;
-            color: #e0f2f7;
-        }
-        .overlay button {
-            background: #4db6ac; /* Softer teal for overlay buttons */
-            padding: 15px 30px;
-            font-size: 1.3em;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-        }
-        .overlay button:hover {
-            background-color: #26a69a;
-            transform: translateY(-3px);
-        }
-
-        /* Confetti Effect */
-        .confetti-piece {
-            position: absolute;
-            width: 10px;
-            height: 10px;
-            background-color: #ffeb3b; /* Yellow */
-            opacity: 0;
-            animation: fall 3s forwards;
-            pointer-events: none;
-            border-radius: 2px;
-        }
-        .confetti-piece:nth-child(2n) { background-color: #9c27b0; } /* Purple */
-        .confetti-piece:nth-child(3n) { background-color: #4fc3f7; } /* Light Blue */
-        .confetti-piece:nth-child(4n) { background-color: #ff7043; } /* Orange */
-
-        @keyframes fall {
-            0% { transform: translateY(-10px) rotateZ(0deg); opacity: 1; }
-            100% { transform: translateY(400px) rotateZ(720deg); opacity: 0; }
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #d1d5db;
         }
     </style>
 </head>
-<body>
-    <div class="game-container">
-        <h1>The Gradient Descent Gauntlet!</h1>
-        <p>Help the Lost Model find its way down the "Loss Function Mountain" to the optimal Brain-Spot!</p>
-        <div class="mountain-container">
-            <canvas id="mountainCanvas"></canvas>
-            <div id="model"></div>
-        </div>
-        <div class="info-display">
-            <div class="info-item">Current Loss: <strong id="currentLoss">0</strong></div>
-            <div class="info-item">Turns Left: <strong id="turnsLeft"></strong></div>
-            <div class="info-item">Learning Rate: <strong id="currentLR">N/A</strong></div>
-        </div>
-        <div class="controls">
-            <button id="bigStepBtn">Take a Big Step! (High LR)</button>
-            <button id="smallStepBtn">Take a Tiny Shuffle! (Low LR)</button>
-        </div>
-        <div id="message"></div>
+<body class="antialiased">
 
-        <div id="startOverlay" class="overlay">
-            <h2>Welcome to the Gauntlet!</h2>
-            <p>Your mission: Guide the model down the Loss Function Mountain using Gradient Descent. Find the lowest point (Global Minimum) before you run out of turns!</p>
-            <button id="startBtn">Start Mission!</button>
-        </div>
+    <header class="sticky top-0 bg-white/80 backdrop-blur-lg shadow-sm z-50">
+        <nav class="container mx-auto px-6 py-3">
+            <div class="flex justify-between items-center">
+                <h1 class="text-xl font-bold text-gray-800">Smart Summary System</h1>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#challenge" class="nav-link text-gray-600 hover:text-purple-500 border-b-2 border-transparent pb-1">Challenge</a>
+                    <a href="#architecture" class="nav-link text-gray-600 hover:text-purple-500 border-b-2 border-transparent pb-1">Architecture</a>
+                    <a href="#technology" class="nav-link text-gray-600 hover:text-purple-500 border-b-2 border-transparent pb-1">Technology</a>
+                    <a href="#optimization" class="nav-link text-gray-600 hover:text-purple-500 border-b-2 border-transparent pb-1">Optimization</a>
+                </div>
+            </div>
+        </nav>
+    </header>
 
-        <div id="gameOverOverlay" class="overlay" style="display: none;">
-            <h2 id="overlayTitle"></h2>
-            <p id="overlayMessage"></p>
-            <button id="restartBtn">Play Again!</button>
+    <main class="container mx-auto px-6 py-12">
+
+        <section id="challenge" class="scroll-mt-24 mb-24">
+            <h2 class="text-4xl font-bold text-center mb-4 text-gray-800">The IWTSD Challenge</h2>
+            <p class="text-lg text-center text-gray-600 max-w-3xl mx-auto mb-12">To develop a secure, on-premises Smart Meeting Summary System that operates effectively within highly constrained computational resources, supporting Farsi, Hebrew, and English.</p>
+            
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <h3 class="font-semibold text-xl mb-3 text-purple-600">Core Objective</h3>
+                    <p class="text-gray-600">Autonomously generate concise, insightful meeting summaries using AI without any cloud processing to ensure data privacy and security.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <h3 class="font-semibold text-xl mb-3 text-purple-600">Key Constraints</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><span>💻</span> <strong>Hardware:</strong> Intel Core i5, 8GB RAM, 256GB Storage</li>
+                        <li><span>🌐</span> <strong>Network:</strong> Strictly offline, no internet access</li>
+                        <li><span>🗣️</span> <strong>Languages:</strong> Farsi, Hebrew, English</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <h3 class="font-semibold text-xl mb-3 text-purple-600">Performance Goals (Phase 1)</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li><span>🎯</span> <strong>Accuracy:</strong> &lt; 20% Word Error Rate (WER)</li>
+                        <li><span>⏱️</span> <strong>Speed:</strong> Process a 30-min meeting in &lt; 1 hour</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="architecture" class="scroll-mt-24 mb-24">
+            <h2 class="text-4xl font-bold text-center mb-4 text-gray-800">Proposed System Architecture</h2>
+            <p class="text-lg text-center text-gray-600 max-w-3xl mx-auto mb-12">A modular, offline-first pipeline designed for efficiency and future extensibility. Click on any module below to learn more about its function.</p>
+
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+                <div class="lg:flex lg:items-center lg:space-x-4 space-y-4 lg:space-y-0">
+                    <div class="arch-module flex-1 bg-gray-50 border-2 border-gray-300 rounded-lg p-4 text-center" data-id="input">
+                        <h4 class="font-bold">Input Layer</h4>
+                        <p class="text-sm text-gray-500">Meeting Audio File</p>
+                    </div>
+                    <div class="flex-shrink-0 hidden lg:block"><div class="arch-arrow"></div></div>
+                    <div class="arch-module flex-1 bg-gray-50 border-2 border-gray-300 rounded-lg p-4 text-center" data-id="asr">
+                        <h4 class="font-bold">ASR Module</h4>
+                        <p class="text-sm text-gray-500">Speech-to-Text</p>
+                    </div>
+                    <div class="flex-shrink-0 hidden lg:block"><div class="arch-arrow"></div></div>
+                    <div class="arch-module flex-1 bg-gray-50 border-2 border-gray-300 rounded-lg p-4 text-center" data-id="nmt">
+                        <h4 class="font-bold">NMT Module</h4>
+                        <p class="text-sm text-gray-500">Machine Translation</p>
+                    </div>
+                    <div class="flex-shrink-0 hidden lg:block"><div class="arch-arrow"></div></div>
+                     <div class="arch-module flex-1 bg-gray-50 border-2 border-gray-300 rounded-lg p-4 text-center" data-id="output">
+                        <h4 class="font-bold">Output Layer</h4>
+                        <p class="text-sm text-gray-500">Transcripts & Translations</p>
+                    </div>
+                </div>
+                <div id="arch-details" class="mt-8 p-6 bg-purple-50 rounded-lg min-h-[100px] transition-all duration-300">
+                    <p class="text-purple-800 text-center">Select a module to see its details.</p>
+                </div>
+                 <div class="mt-8 text-center">
+                    <h3 class="font-semibold text-xl mb-4 text-gray-700">Future Capabilities (Extensible Modules)</h3>
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <span class="bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">Speaker Diarization</span>
+                        <span class="bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">Summarization</span>
+                        <span class="bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">Sentiment Analysis</span>
+                        <span class="bg-gray-200 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">Action Item Extraction</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="technology" class="scroll-mt-24 mb-24">
+            <h2 class="text-4xl font-bold text-center mb-4 text-gray-800">Technology Deep Dive</h2>
+            <p class="text-lg text-center text-gray-600 max-w-3xl mx-auto mb-12">Comparing candidate models for Automatic Speech Recognition (ASR) and Neural Machine Translation (NMT) based on performance and resource usage on constrained hardware.</p>
+
+            <div class="grid lg:grid-cols-2 gap-12">
+                <div>
+                    <h3 class="text-2xl font-bold text-center mb-6 text-gray-700">ASR Model Comparison</h3>
+                    <div class="chart-container">
+                        <canvas id="asrChart"></canvas>
+                    </div>
+                    <div class="flex justify-center mt-4 space-x-2">
+                        <button class="asr-chart-btn bg-purple-500 text-white px-4 py-2 rounded-md text-sm" data-metric="ram">RAM Usage</button>
+                        <button class="asr-chart-btn bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm" data-metric="time">Processing Time</button>
+                        <button class="asr-chart-btn bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm" data-metric="wer">Word Error Rate</button>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-center mb-6 text-gray-700">NMT Model Comparison</h3>
+                    <div class="chart-container">
+                        <canvas id="nmtChart"></canvas>
+                    </div>
+                     <div class="flex justify-center mt-4 space-x-2">
+                        <button class="nmt-chart-btn bg-purple-500 text-white px-4 py-2 rounded-md text-sm" data-metric="ram">RAM Usage</button>
+                        <button class="nmt-chart-btn bg-gray-300 text-gray-700 px-4 py-2 rounded-md text-sm" data-metric="speed">Processing Speed</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="optimization" class="scroll-mt-24">
+            <h2 class="text-4xl font-bold text-center mb-4 text-gray-800">Optimization Strategies</h2>
+            <p class="text-lg text-center text-gray-600 max-w-3xl mx-auto mb-12">Key techniques to ensure high performance on resource-constrained hardware, enabling large models to run efficiently on a standard laptop.</p>
+
+            <div class="space-y-6">
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <details>
+                        <summary class="font-semibold text-xl cursor-pointer text-purple-600">Quantization</summary>
+                        <p class="mt-4 text-gray-600">Reduces the numerical precision of model parameters (e.g., from 32-bit floats to 8-bit integers). This dramatically shrinks model size and speeds up calculations on the CPU, making it a critical technique for fitting complex models like Whisper and mBART into the 8GB RAM limit.</p>
+                    </details>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <details>
+                        <summary class="font-semibold text-xl cursor-pointer text-purple-600">Efficient Inference Engines</summary>
+                        <p class="mt-4 text-gray-600">Utilizing specialized runtimes like <strong>CTranslate2</strong> and <strong>ONNX Runtime</strong>. These engines are highly optimized for CPU execution, using techniques like layer fusion and leveraging low-level instruction sets (e.g., AVX2) to achieve performance gains of up to 4x-10x compared to standard frameworks.</p>
+                    </details>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <details>
+                        <summary class="font-semibold text-xl cursor-pointer text-purple-600">Pruning & Knowledge Distillation</summary>
+                        <p class="mt-4 text-gray-600">Advanced methods to further reduce model complexity. <strong>Pruning</strong> removes non-critical parts of the neural network, while <strong>Knowledge Distillation</strong> trains a smaller "student" model to mimic a larger "teacher" model. These are especially useful for future modules like summarization and sentiment analysis.</p>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-24">
+        <div class="container mx-auto px-6 py-4 text-center">
+            <p>&copy; 2025 Smart Meeting Summary System Proposal. All information is based on the IWTSD Challenge technical report.</p>
         </div>
-    </div>
+    </footer>
 
     <script>
-        const model = document.getElementById('model');
-        const currentLossSpan = document.getElementById('currentLoss');
-        const turnsLeftSpan = document.getElementById('turnsLeft');
-        const currentLRSpan = document.getElementById('currentLR');
-        const bigStepBtn = document.getElementById('bigStepBtn');
-        const smallStepBtn = document.getElementById('smallStepBtn');
-        const messageDiv = document.getElementById('message');
-        const startOverlay = document.getElementById('startOverlay');
-        const startBtn = document.getElementById('startBtn');
-        const gameOverOverlay = document.getElementById('gameOverOverlay');
-        const overlayTitle = document.getElementById('overlayTitle');
-        const overlayMessage = document.getElementById('overlayMessage');
-        const restartBtn = document.getElementById('restartBtn');
-        const mountainContainer = document.querySelector('.mountain-container');
-        const canvas = document.getElementById('mountainCanvas');
-        const ctx = canvas.getContext('2d');
-
-        let modelX = 0;
-        let modelY = 0;
-        let currentLoss = 0;
-        let gameActive = false; // Game starts inactive
-        let turns = 0;
-        const maxTurns = 15; // Slightly fewer turns for more challenge
-        let pathPoints = []; // To store the model's history
-
-        // Define the mountain path as normalized (0-1) coordinates
-        // Adjusted for a more interesting curve with local minima
-        const mountainPath = [
-            { x: 0.05, y: 0.85 },
-            { x: 0.15, y: 0.65 },
-            { x: 0.25, y: 0.75 }, // Local peak
-            { x: 0.35, y: 0.55 }, // Local minimum 1 (trap)
-            { x: 0.45, y: 0.65 }, // Another peak
-            { x: 0.55, y: 0.2 },  // Global Minimum
-            { x: 0.65, y: 0.4 },  // Climbing out of global minimum
-            { x: 0.75, y: 0.3 },  // Local minimum 2
-            { x: 0.85, y: 0.5 },
-            { x: 0.95, y: 0.8 }
-        ];
-        // Indices of significant points
-        const globalMinimumIndex = 5;
-        const localMinimum1Index = 3;
-        const localMinimum2Index = 7;
-
-        // Map normalized coordinates to pixel coordinates within the container
-        function mapPointToContainer(point) {
-            const w = mountainContainer.offsetWidth;
-            const h = mountainContainer.offsetHeight;
-            return { x: point.x * w, y: h - (point.y * h) }; // Y-axis inverted for bottom-up calculation
-        }
-
-        // Interpolate Y value for any given X percentage on the mountain path
-        function getPathY(xPercent) {
-            let p1 = mountainPath[0];
-            let p2 = mountainPath[mountainPath.length - 1];
-
-            // Find the two points that xPercent falls between
-            for (let i = 0; i < mountainPath.length - 1; i++) {
-                if (xPercent >= mountainPath[i].x && xPercent <= mountainPath[i+1].x) {
-                    p1 = mountainPath[i];
-                    p2 = mountainPath[i+1];
-                    break;
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const archModules = {
+                input: {
+                    title: 'Input Layer: Meeting Audio Files',
+                    desc: 'The system accepts raw audio recordings of virtual meetings (e.g., WAV, MP3) as its initial input. This is the starting point of the entire processing pipeline.'
+                },
+                asr: {
+                    title: 'Automatic Speech Recognition (ASR) Module',
+                    desc: 'This core module transcribes the spoken audio into text in its original language (Farsi, Hebrew, or English). It uses highly optimized, on-device models to ensure accuracy and speed within the hardware constraints.'
+                },
+                nmt: {
+                    title: 'Neural Machine Translation (NMT) Module',
+                    desc: 'The transcribed text is fed into this module, which translates it into the other two target languages. This ensures a full multilingual output as required by the challenge.'
+                },
+                output: {
+                    title: 'Output Layer: Transcripts & Translations',
+                    desc: 'The final output consists of the original language transcript and its corresponding translations. This data is stored locally and presented to the user, with no data ever leaving the machine.'
                 }
-            }
+            };
 
-            // Linear interpolation
-            const t = (xPercent - p1.x) / (p2.x - p1.x);
-            return p1.y + t * (p2.y - p1.y);
-        }
+            const archModuleElements = document.querySelectorAll('.arch-module');
+            const archDetailsContainer = document.getElementById('arch-details');
 
-        // Update the model's visual position and loss display
-        function updateModelPosition() {
-            const w = mountainContainer.offsetWidth;
-            const h = mountainContainer.offsetHeight;
-
-            // Clamp modelX to stay within reasonable bounds
-            modelX = Math.max(0.01, Math.min(0.99, modelX));
-            modelY = getPathY(modelX);
-            currentLoss = parseFloat((modelY * 100).toFixed(1)); // Convert to a more readable loss value
-
-            // Set CSS properties for model
-            model.style.left = `${modelX * w}px`;
-            model.style.bottom = `${modelY * h}px`; // 'bottom' corresponds to 'height - mapped.y'
-
-            currentLossSpan.textContent = currentLoss;
-            turnsLeftSpan.textContent = maxTurns - turns;
-
-            // Add current position to path history
-            pathPoints.push({ x: modelX, y: modelY });
-            if (pathPoints.length > 50) { // Keep path history from getting too long
-                pathPoints.shift();
-            }
-
-            drawMountainPath(); // Redraw with new model position and path history
-            if (gameActive) {
-                checkGameStatus();
-            }
-        }
-
-        // Draw the mountain, path points, and model's trail
-        function drawMountainPath() {
-            const w = mountainContainer.offsetWidth;
-            const h = mountainContainer.offsetHeight;
-            canvas.width = w;
-            canvas.height = h;
-            ctx.clearRect(0, 0, w, h);
-
-            // Draw mountain shape (fill)
-            ctx.fillStyle = '#c8e6c9'; // Light green for mountain fill
-            ctx.beginPath();
-            ctx.moveTo(0, h); // Start at bottom-left
-            mountainPath.forEach((p) => {
-                const pt = mapPointToContainer(p);
-                ctx.lineTo(pt.x, pt.y);
+            archModuleElements.forEach(module => {
+                module.addEventListener('click', () => {
+                    archModuleElements.forEach(m => m.classList.remove('highlight'));
+                    module.classList.add('highlight');
+                    
+                    const moduleData = archModules[module.dataset.id];
+                    archDetailsContainer.innerHTML = `
+                        <h4 class="font-bold text-lg mb-2 text-purple-800">${moduleData.title}</h4>
+                        <p class="text-purple-700">${moduleData.desc}</p>
+                    `;
+                });
             });
-            ctx.lineTo(w, h); // To bottom-right
-            ctx.closePath();
-            ctx.fill();
 
-            // Draw mountain path (stroke)
-            ctx.strokeStyle = '#4caf50'; // Green for path line
-            ctx.lineWidth = 4;
-            ctx.beginPath();
-            mountainPath.forEach((p, i) => {
-                const pt = mapPointToContainer(p);
-                if (i === 0) ctx.moveTo(pt.x, pt.y);
-                else ctx.lineTo(pt.x, pt.y);
-            });
-            ctx.stroke();
-
-            // Draw model's loss history trail
-            ctx.strokeStyle = 'rgba(103, 58, 183, 0.5)'; // Semi-transparent purple
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            pathPoints.forEach((p, i) => {
-                const pt = mapPointToContainer(p);
-                if (i === 0) ctx.moveTo(pt.x, pt.y);
-                else ctx.lineTo(pt.x, pt.y);
-            });
-            ctx.stroke();
-
-            // Remove old path points to redraw
-            document.querySelectorAll('.path-point').forEach(el => el.remove());
-
-            // Draw fixed path points (local and global minima)
-            mountainPath.forEach((point, i) => {
-                const el = document.createElement('div');
-                el.classList.add('path-point');
-                const mapped = mapPointToContainer(point);
-                el.style.left = `${mapped.x}px`;
-                el.style.bottom = `${h - mapped.y}px`; // Position from bottom
-                if (i === globalMinimumIndex) el.classList.add('global-minimum');
-                mountainContainer.appendChild(el);
-            });
-        }
-
-        // Perform a step of gradient descent
-        function takeStep(stepSize, lrText) {
-            if (!gameActive) return;
-
-            turns++;
-            currentLRSpan.textContent = lrText;
-
-            // Calculate "gradient" by checking neighboring points
-            const currentY = getPathY(modelX);
-            const delta = 0.005; // Small delta for approximation
-            const leftY = getPathY(modelX - delta);
-            const rightY = getPathY(modelX + delta);
-
-            let direction = 0; // -1 for left (downhill), 1 for right (downhill)
-
-            // Determine the steepest downhill direction
-            if (currentY - leftY > currentY - rightY) { // Left is steeper downhill
-                direction = -1;
-            } else if (currentY - rightY > currentY - leftY) { // Right is steeper downhill
-                direction = 1;
-            }
-
-            // Check if stuck in a flat area or a local minimum (where both sides are higher or equal)
-            if (leftY >= currentY && rightY >= currentY) {
-                // We are at a local minimum (or a very flat area)
-                messageDiv.textContent = "You're stuck in a local minimum! Try a different step size or direction to escape!";
-            } else {
-                messageDiv.textContent = ""; // Clear previous message
-            }
-
-            modelX += direction * stepSize;
-            updateModelPosition();
-        }
-
-        // Check game win/lose conditions
-        function checkGameStatus() {
-            const goalY = mountainPath[globalMinimumIndex].y;
-            const globalMinX = mountainPath[globalMinimumIndex].x;
-
-            const atGlobalMinimum = Math.abs(modelY - goalY) < 0.05 && Math.abs(modelX - globalMinX) < 0.05;
-
-            if (atGlobalMinimum) {
-                endGame(true, "VICTORY!", `You reached the optimal Brain-Spot in ${turns} turns!`);
-                spawnConfetti();
-            } else if (turns >= maxTurns) {
-                let finalMessage = `You ran out of turns. Final Loss: ${currentLoss}.`;
-                const localMin1X = mountainPath[localMinimum1Index].x;
-                const localMin2X = mountainPath[localMinimum2Index].x;
-                const localMinYThreshold = 0.1; // Threshold to detect local minimum
-
-                if ((Math.abs(modelX - localMin1X) < 0.05 && Math.abs(modelY - mountainPath[localMinimum1Index].y) < localMinYThreshold) ||
-                    (Math.abs(modelX - localMin2X) < 0.05 && Math.abs(modelY - mountainPath[localMinimum2Index].y) < localMinYThreshold)) {
-                    finalMessage += " You got stuck in a local minimum!";
-                } else if (modelY > goalY + 0.2) { // If loss is significantly higher than global minimum
-                    finalMessage += " You are far from the optimal point.";
+            const asrData = {
+                labels: ['Vosk (Small)', 'Whisper (Optimized)'],
+                ram: {
+                    data: [0.3, 1.5],
+                    label: 'RAM Usage (GB)'
+                },
+                time: {
+                    data: [12.5, 3.9],
+                    label: 'Processing Time (minutes for 30-min audio)'
+                },
+                wer: {
+                    data: [10.1, 17.0],
+                    label: 'Word Error Rate (%) - Lower is better'
                 }
+            };
 
-                endGame(false, "GAME OVER!", finalMessage);
-            }
-        }
+            const nmtData = {
+                labels: ['mBART-50 (Optimized)', 'Opus-MT (Optimized)'],
+                ram: {
+                    data: [0.85, 0.85],
+                    label: 'RAM Usage (GB)'
+                },
+                speed: {
+                    data: [550, 550],
+                    label: 'Processing Speed (tokens/sec)'
+                }
+            };
+            
+            const chartOptions = (titleText) => ({
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: false,
+                    },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: '#333',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#e5e7eb'
+                        },
+                        ticks: {
+                            color: '#6b7280'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: '#6b7280'
+                        }
+                    }
+                }
+            });
 
-        // Display game over overlay
-        function endGame(won, title, msg) {
-            gameActive = false;
-            bigStepBtn.disabled = true;
-            smallStepBtn.disabled = true;
-            overlayTitle.textContent = title;
-            overlayMessage.textContent = msg;
-            gameOverOverlay.style.display = 'flex';
-        }
+            const asrCtx = document.getElementById('asrChart').getContext('2d');
+            let asrChart = new Chart(asrCtx, {
+                type: 'bar',
+                data: {
+                    labels: asrData.labels,
+                    datasets: [{
+                        label: asrData.ram.label,
+                        data: asrData.ram.data,
+                        backgroundColor: ['#a78bfa', '#8b5cf6'],
+                        borderColor: ['#8b5cf6', '#7c3aed'],
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: chartOptions('ASR RAM Usage')
+            });
 
-        // Reset game state
-        function resetGame() {
-            modelX = mountainPath[0].x; // Start at the beginning of the path
-            modelY = getPathY(modelX);
-            currentLoss = parseFloat((modelY * 100).toFixed(1));
-            gameActive = true;
-            turns = 0;
-            pathPoints = []; // Clear path history
-            messageDiv.textContent = "";
-            bigStepBtn.disabled = false;
-            smallStepBtn.disabled = false;
-            gameOverOverlay.style.display = 'none';
-            startOverlay.style.display = 'none'; // Hide start overlay
-            currentLRSpan.textContent = "N/A"; // Reset LR display
-            updateModelPosition(); // Initial position update
-        }
+            const nmtCtx = document.getElementById('nmtChart').getContext('2d');
+            let nmtChart = new Chart(nmtCtx, {
+                type: 'bar',
+                data: {
+                    labels: nmtData.labels,
+                    datasets: [{
+                        label: nmtData.ram.label,
+                        data: nmtData.ram.data,
+                        backgroundColor: ['#a78bfa', '#8b5cf6'],
+                        borderColor: ['#8b5cf6', '#7c3aed'],
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: chartOptions('NMT RAM Usage')
+            });
 
-        // Confetti effect on win
-        function spawnConfetti() {
-            const containerRect = mountainContainer.getBoundingClientRect();
-            for (let i = 0; i < 50; i++) {
-                const confetti = document.createElement('div');
-                confetti.classList.add('confetti-piece');
-                confetti.style.left = `${Math.random() * containerRect.width}px`;
-                confetti.style.top = `${Math.random() * containerRect.height / 2}px`; // Start from top half
-                confetti.style.animationDelay = `${Math.random() * 0.5}s`;
-                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 70%, 60%)`; // Random color
-                mountainContainer.appendChild(confetti);
+            document.querySelectorAll('.asr-chart-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const metric = e.target.dataset.metric;
+                    asrChart.data.datasets[0].data = asrData[metric].data;
+                    asrChart.data.datasets[0].label = asrData[metric].label;
+                    asrChart.update();
+                    document.querySelectorAll('.asr-chart-btn').forEach(btn => {
+                        btn.classList.remove('bg-purple-500', 'text-white');
+                        btn.classList.add('bg-gray-300', 'text-gray-700');
+                    });
+                    e.target.classList.add('bg-purple-500', 'text-white');
+                    e.target.classList.remove('bg-gray-300', 'text-gray-700');
+                });
+            });
 
-                // Remove after animation to prevent DOM clutter
-                confetti.addEventListener('animationend', () => confetti.remove());
-            }
-        }
+            document.querySelectorAll('.nmt-chart-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const metric = e.target.dataset.metric;
+                    nmtChart.data.datasets[0].data = nmtData[metric].data;
+                    nmtChart.data.datasets[0].label = nmtData[metric].label;
+                    nmtChart.update();
+                    document.querySelectorAll('.nmt-chart-btn').forEach(btn => {
+                        btn.classList.remove('bg-purple-500', 'text-white');
+                        btn.classList.add('bg-gray-300', 'text-gray-700');
+                    });
+                    e.target.classList.add('bg-purple-500', 'text-white');
+                    e.target.classList.remove('bg-gray-300', 'text-gray-700');
+                });
+            });
 
+            const navLinks = document.querySelectorAll('.nav-link');
+            const sections = document.querySelectorAll('main section');
 
-        // Event Listeners
-        bigStepBtn.addEventListener('click', () => takeStep(0.12, 'High')); // Increased big step size
-        smallStepBtn.addEventListener('click', () => takeStep(0.04, 'Low')); // Increased small step size
-        restartBtn.addEventListener('click', resetGame);
-        startBtn.addEventListener('click', resetGame); // Start button also calls reset
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 120) {
+                        current = section.getAttribute('id');
+                    }
+                });
 
-        // Handle window resize to redraw canvas and update model position
-        window.addEventListener('resize', () => {
-            drawMountainPath();
-            updateModelPosition();
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+            
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
         });
-
-        // Initial setup
-        drawMountainPath();
-        // The start overlay is initially displayed, and resetGame will be called when the user clicks 'Start Mission!'
-        // updateModelPosition is called by resetGame, so no need to call it here initially.
     </script>
 </body>
 </html>
